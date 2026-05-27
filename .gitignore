@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Local virtual environments
+venv/
+.venv/
+
+# Database artifacts
+backend-sidecar/database/colegio.db
+*.db
+
+# Rust/Tauri build output
+src-tauri/target/

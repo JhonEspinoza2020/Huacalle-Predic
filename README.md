@@ -75,6 +75,29 @@ python .\backend-sidecar\database\db_setup.py
 
 ---
 
+## Análisis con SonarQube
+
+El proyecto ya incluye `sonar-project.properties`.
+
+1. Genera reportes de pruebas/cobertura Python (opcional pero recomendado):
+
+```powershell
+pip install pytest pytest-cov
+python -m pytest tests --junitxml=pytest-report.xml --cov=backend-sidecar --cov-report=xml:coverage.xml
+```
+
+2. Ejecuta Sonar Scanner desde la raíz:
+
+```powershell
+sonar-scanner `
+  -Dsonar.host.url=http://localhost:9000 `
+  -Dsonar.token=TU_TOKEN
+```
+
+> Si no usas cobertura por ahora, Sonar igual corre; solo no mostrará métricas de coverage.
+
+---
+
 ## Estructura breve
 
 ```
