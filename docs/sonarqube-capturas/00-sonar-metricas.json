@@ -1,0 +1,22 @@
+{
+  "proyecto": "PredictHuacalle",
+  "projectKey": "predicthuacalle",
+  "fecha_analisis": "2026-06-03",
+  "quality_gate": "OK",
+  "metricas": {
+    "tests": 4,
+    "test_success_density": "100.0%",
+    "coverage": "15.3%",
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "code_smells": 0,
+    "ncloc": 1317,
+    "reliability_rating": "A",
+    "security_rating": "A",
+    "maintainability_rating": "A"
+  },
+  "docker": {
+    "sonarqube": "sonarqube:lts-community (puerto 9000)",
+    "scanner": "sonarsource/sonar-scanner-cli"
+  }
+}

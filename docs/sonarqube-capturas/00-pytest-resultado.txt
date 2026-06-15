@@ -1,0 +1,18 @@
+PredictHuacalle — Resultado de pruebas pytest (2026-06-03)
+==========================================================
+
+Comando ejecutado:
+  venv\Scripts\python.exe -m pytest tests --junitxml=pytest-report.xml --cov=backend-sidecar --cov-report=xml:coverage.xml -v
+
+Resultado:
+  4 passed in ~33s
+
+Pruebas:
+  tests/test_logic.py::test_grade_mapping_peru_scale ................ PASSED
+  tests/test_logic.py::test_predict_endpoint_with_valid_payload ..... PASSED
+  tests/test_logic.py::test_predict_endpoint_missing_data_returns_controlled_error ... PASSED
+  tests/test_logic.py::test_model_file_is_loaded_correctly .......... PASSED
+
+Reportes generados:
+  - pytest-report.xml  (JUnit para SonarQube)
+  - coverage.xml       (Cobertura Cobertura para SonarQube)

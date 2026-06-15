@@ -2,7 +2,7 @@ import os
 import sqlite3
 from datetime import date
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 DB_FILENAME = "colegio.db"
 
 
@@ -118,6 +118,54 @@ def _migrate_legacy_estudiantes(cursor: sqlite3.Cursor) -> None:
         )
 
     cursor.execute("DROP TABLE estudiantes_legacy")
+    _repair_broken_estudiantes_foreign_keys(cursor)
+
+
+_TABLES_WITH_ESTUDIANTE_FK = [
+    "seguimiento_alertas",
+    "alertas_riesgo",
+    "competencias_notas",
+    "predicciones_riesgo",
+    "evaluaciones",
+    "intervenciones",
+    "inscripciones_reforzamiento",
+    "asistencias_diarias",
+    "derivaciones_externas",
+    "incidencias_convivencia",
+    "estudiante_apoderado",
+    "matriculas",
+]
+
+
+def _has_broken_estudiantes_foreign_keys(cursor: sqlite3.Cursor) -> bool:
+    row = cursor.execute(
+        """
+        SELECT 1 FROM sqlite_master
+        WHERE sql LIKE '%estudiantes_legacy%'
+        LIMIT 1
+        """
+    ).fetchone()
+    return row is not None
+
+
+def _repair_broken_estudiantes_foreign_keys(cursor: sqlite3.Cursor) -> None:
+    """Recrea tablas cuyas FK quedaron apuntando a estudiantes_legacy tras migracion."""
+    if not _has_broken_estudiantes_foreign_keys(cursor):
+        return
+
+    cursor.execute("PRAGMA foreign_keys=OFF")
+    for table_name in _TABLES_WITH_ESTUDIANTE_FK:
+        if not _table_exists(cursor, table_name):
+            continue
+        table_sql = cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+        if table_sql and table_sql[0] and "estudiantes_legacy" in table_sql[0]:
+            cursor.execute(f"DROP TABLE {table_name}")
+
+    _create_tables(cursor)
+    cursor.execute("PRAGMA foreign_keys=ON")
 
 
 def _create_tables(cursor: sqlite3.Cursor) -> None:
@@ -570,7 +618,7 @@ def _seed_reference_data(cursor: sqlite3.Cursor) -> None:
         """,
         [
             ("María", "Quispe", "Huaman", "12345678", "Comunicación", "tutor", "987654321"),
-            ("Carlos", "Mendoza", "Rojas", "87654321", "Matemática", "docente", "912345678"),
+            ("Carlos", "Mendoza", "Rojas", "87654321", "Matemática", "admin", "912345678"),
         ],
     )
     tutor_primaria_id = 1
@@ -633,6 +681,43 @@ def _seed_reference_data(cursor: sqlite3.Cursor) -> None:
     )
 
 
+def _seed_usuarios_sistema(cursor: sqlite3.Cursor) -> None:
+    from werkzeug.security import generate_password_hash
+
+    cursor.execute("SELECT COUNT(*) FROM usuarios_sistema")
+    if cursor.fetchone()[0] > 0:
+        return
+
+    cursor.execute("SELECT id FROM docentes WHERE dni = '87654321' LIMIT 1")
+    admin_docente = cursor.fetchone()
+    cursor.execute("SELECT id FROM docentes WHERE dni = '12345678' LIMIT 1")
+    tutor_docente = cursor.fetchone()
+
+    if admin_docente is None or tutor_docente is None:
+        return
+
+    cursor.executemany(
+        """
+        INSERT INTO usuarios_sistema (docente_id, username, password_hash, rol, activo)
+        VALUES (?, ?, ?, ?, 1)
+        """,
+        [
+            (
+                admin_docente[0],
+                "admin",
+                generate_password_hash("admin2026"),
+                "admin",
+            ),
+            (
+                tutor_docente[0],
+                "mquispe",
+                generate_password_hash("tutor2026"),
+                "docente",
+            ),
+        ],
+    )
+
+
 def setup_database(seed: bool = True) -> str:
     db_path = get_db_path()
     connection = sqlite3.connect(db_path)
@@ -642,8 +727,10 @@ def setup_database(seed: bool = True) -> str:
     _create_tables(cursor)
 
     current_version = _get_schema_version(cursor)
+    _migrate_legacy_estudiantes(cursor)
+    _repair_broken_estudiantes_foreign_keys(cursor)
+
     if current_version < SCHEMA_VERSION:
-        _migrate_legacy_estudiantes(cursor)
         cursor.execute(
             "INSERT INTO schema_version (version) VALUES (?)",
             (SCHEMA_VERSION,),
@@ -651,6 +738,7 @@ def setup_database(seed: bool = True) -> str:
 
     if seed:
         _seed_reference_data(cursor)
+        _seed_usuarios_sistema(cursor)
 
     connection.commit()
     connection.close()

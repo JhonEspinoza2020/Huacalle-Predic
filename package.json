@@ -21,5 +21,22 @@
     "@vitejs/plugin-react": "^4.6.0",
     "tailwindcss": "^4.2.4",
     "vite": "^7.0.4"
-  }
+  },
+  "description": "Sistema de predicción de **riesgo de deserción escolar** para la I.E.I. N° 32857 — Huacalle.",
+  "main": "vite.config.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JhonEspinoza2020/Huacalle-Predic.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JhonEspinoza2020/Huacalle-Predic/issues"
+  },
+  "homepage": "https://github.com/JhonEspinoza2020/Huacalle-Predic#readme"
 }

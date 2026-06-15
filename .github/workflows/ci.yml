@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend-sidecar/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend-sidecar/requirements.txt pytest pytest-cov
+
+      - name: Generate SIAGIE demo file
+        run: python scripts/generate_siagie_demo.py
+
+      - name: Run tests
+        run: |
+          python -m pytest tests \
+            --junitxml=pytest-report.xml \
+            --cov=backend-sidecar \
+            --cov-report=term-missing \
+            -q
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: pytest-report.xml
