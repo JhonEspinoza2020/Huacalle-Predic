@@ -1,37 +1,51 @@
 # Carpeta de pruebas — PredictEdu / PredictHuacalle
 
-Esta carpeta concentra el **plan de pruebas** y los artefactos que el docente suele solicitar en proyectos de software: estrategia, casos de prueba, trazabilidad y registro de ejecución.
+Estructura alineada con **ISO/IEC/IEEE 29119** y con los tipos de prueba del plan maestro.
 
-## Contenido
+## Estructura
+
+```
+tests/
+├── caja-negra/      # Comportamiento externo (API HTTP, casos manuales)
+├── caja-blanca/     # Implementación interna (BD, repositorio, seguridad)
+├── unitarias/       # Funciones y módulos aislados
+├── plan-de-pruebas.md
+├── matriz-trazabilidad.md
+└── registro-de-ejecucion.md
+```
+
+| Carpeta | Técnica | README |
+|---------|---------|--------|
+| [caja-negra/](./caja-negra/) | Caja negra — entradas/salidas sin detalle interno | Casos CP + `pytest` API |
+| [caja-blanca/](./caja-blanca/) | Caja blanca — esquema, repositorio, cabeceras | Tests de estructura |
+| [unitarias/](./unitarias/) | Unitarias — validadores, motor de riesgo, notas | Funciones puras |
+
+## Documentación de planificación
 
 | Archivo | Propósito |
 |--------|-----------|
-| [plan-de-pruebas.md](./plan-de-pruebas.md) | Plan maestro: objetivos, alcance, tipos de prueba, entorno, criterios de salida. |
-| [casos-de-prueba.md](./casos-de-prueba.md) | Casos detallados (ID, precondiciones, pasos, resultado esperado). |
-| [matriz-trazabilidad.md](./matriz-trazabilidad.md) | Relación entre requisitos funcionales y casos de prueba. |
-| [registro-de-ejecucion.md](./registro-de-ejecucion.md) | Bitácora de corridas (fecha, responsable, resultado). |
-| [ejemplos-curl.md](./ejemplos-curl.md) | Comandos para verificar el API Flask sin la interfaz gráfica. |
+| [plan-de-pruebas.md](./plan-de-pruebas.md) | Plan maestro: objetivos, alcance, entorno, criterios de salida. |
+| [caja-negra/casos-de-prueba.md](./caja-negra/casos-de-prueba.md) | Casos detallados (ID, pasos, resultado esperado). |
+| [matriz-trazabilidad.md](./matriz-trazabilidad.md) | Relación requisitos ↔ casos de prueba. |
+| [registro-de-ejecucion.md](./registro-de-ejecucion.md) | Bitácora de corridas. |
+| [caja-negra/ejemplos-curl.md](./caja-negra/ejemplos-curl.md) | Verificación manual del API Flask. |
 
-## Pruebas automatizadas (pytest)
+## Ejecutar pytest
 
 ```powershell
+# Suite completa
 venv\Scripts\python.exe -m pytest tests -v
+
+# Por tipo
+venv\Scripts\python.exe -m pytest tests/unitarias -v
+venv\Scripts\python.exe -m pytest tests/caja-blanca -v
+venv\Scripts\python.exe -m pytest tests/caja-negra -v
 ```
 
-| Archivo | Cubre |
-|---------|--------|
-| `test_logic.py` | CP-001, CP-002, CP-003, CP-004, CP-005 |
-| `test_siagie.py` | CP-006, CP-007, CP-008, CP-009 |
-| `test_persistence.py` | Persistencia en SQLite tras `/api/predict` |
-| `test_repository.py` | Capa `database/repository.py` |
-| `test_reportes.py` | Filtros y exportación Excel |
+CI: `.github/workflows/ci.yml` · SonarQube: `run_sonar.bat`
 
-CI en GitHub Actions: `.github/workflows/ci.yml` (push/PR a `main` o `master`).
+## Sistema bajo prueba
 
-## Sistema bajo prueba (resumen)
-
-- **Frontend:** aplicación de escritorio **Tauri + React (Vite)**; pantalla principal en `src/App.jsx`.
-- **Backend:** **Flask** en `backend-sidecar/app.py`, puerto por defecto `http://127.0.0.1:5000`.
-- **Modelo:** Random Forest cargado desde `backend-sidecar/ml_models/modelo_rf.pkl`.
-
-Para ejecutar pruebas manuales de punta a punta, el backend debe estar en ejecución y el modelo presente; véanse precondiciones en cada caso.
+- **Frontend:** Tauri + React (Vite) — `src/`
+- **Backend:** Flask — `backend-sidecar/app.py` (`http://127.0.0.1:5000`)
+- **Modelo:** `backend-sidecar/ml_models/modelo_rf.pkl`

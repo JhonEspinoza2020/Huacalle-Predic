@@ -21,6 +21,15 @@ def build_dataset() -> pd.DataFrame:
         {"asistencias": 70, "nota_matematica": "B", "nota_lenguaje": "B", "participacion": 5, "riesgo_desercion": 1},
         {"asistencias": 84, "nota_matematica": "A", "nota_lenguaje": "B", "participacion": 7, "riesgo_desercion": 0},
         {"asistencias": 68, "nota_matematica": "B", "nota_lenguaje": "C", "participacion": 4, "riesgo_desercion": 1},
+        {"asistencias": 100, "nota_matematica": "C", "nota_lenguaje": "C", "participacion": 7, "riesgo_desercion": 1},
+        {"asistencias": 95, "nota_matematica": "C", "nota_lenguaje": "C", "participacion": 6, "riesgo_desercion": 1},
+        {"asistencias": 87, "nota_matematica": "C", "nota_lenguaje": "C", "participacion": 5, "riesgo_desercion": 1},
+        {"asistencias": 92, "nota_matematica": "C", "nota_lenguaje": "B", "participacion": 6, "riesgo_desercion": 1},
+        {"asistencias": 88, "nota_matematica": "B", "nota_lenguaje": "C", "participacion": 5, "riesgo_desercion": 1},
+        {"asistencias": 58, "nota_matematica": "A", "nota_lenguaje": "A", "participacion": 6, "riesgo_desercion": 1},
+        {"asistencias": 72, "nota_matematica": "A", "nota_lenguaje": "AD", "participacion": 7, "riesgo_desercion": 1},
+        {"asistencias": 85, "nota_matematica": "C", "nota_lenguaje": "A", "participacion": 7, "riesgo_desercion": 1},
+        {"asistencias": 82, "nota_matematica": "B", "nota_lenguaje": "B", "participacion": 6, "riesgo_desercion": 1},
     ]
     return pd.DataFrame(data)
 

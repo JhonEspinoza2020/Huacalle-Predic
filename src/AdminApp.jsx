@@ -6,12 +6,15 @@ import {
 } from "./apiClient";
 import {
   IconChart,
+  IconDatabase,
   IconFile,
   IconLogout,
   IconSchool,
   IconUpload,
   IconUsers,
+  IconWrench,
 } from "./icons";
+import IndicadoresPanel, { MESES_LABELS } from "./IndicadoresPanel";
 
 function AdminTab({ label, icon: Icon, active, onClick }) {
   return (
@@ -51,8 +54,8 @@ const CARGO_LABELS = {
   docente: "Docente",
   tutor: "Tutor",
   director: "Director",
-  psicologo: "Psicologo",
-  admin: "Administracion",
+  psicologo: "Psicólogo",
+  admin: "Administración",
 };
 
 function formatSeccion(item) {
@@ -62,7 +65,7 @@ function formatSeccion(item) {
 
 function formatTurno(turno) {
   if (turno === "tarde") return "Tarde";
-  return "Manana";
+  return "Mañana";
 }
 
 export default function AdminApp({ user, onLogout }) {
@@ -78,6 +81,17 @@ export default function AdminApp({ user, onLogout }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
+  const [tablasResumen, setTablasResumen] = useState([]);
+  const [aniosEscolares, setAniosEscolares] = useState([]);
+  const [anioActivo, setAnioActivo] = useState(null);
+  const [selectedAnioId, setSelectedAnioId] = useState("");
+  const [mantenimientoLoading, setMantenimientoLoading] = useState(false);
+  const [demoDeleting, setDemoDeleting] = useState(false);
+  const [indicadorAnio, setIndicadorAnio] = useState(() => new Date().getFullYear());
+  const [indicadorMes, setIndicadorMes] = useState(() => new Date().getMonth() + 1);
+  const [indicadoresList, setIndicadoresList] = useState([]);
+  const [indicadoresLoading, setIndicadoresLoading] = useState(false);
+  const [indicadoresMessage, setIndicadoresMessage] = useState("");
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
@@ -108,6 +122,116 @@ export default function AdminApp({ user, onLogout }) {
   useEffect(() => {
     loadAdminData();
   }, [loadAdminData]);
+
+  const loadMantenimiento = useCallback(async () => {
+    setMantenimientoLoading(true);
+    try {
+      const [resumenBd, anioData] = await Promise.all([
+        authFetchJson(`${API_BASE}/api/admin/resumen-bd`),
+        authFetchJson(`${API_BASE}/api/admin/anio-escolar`),
+      ]);
+      setTablasResumen(resumenBd.tablas || []);
+      const anios = anioData.anios || [];
+      setAniosEscolares(anios);
+      const activo = anioData.activo || anios.find((item) => item.activo) || null;
+      setAnioActivo(activo);
+      setSelectedAnioId(activo ? String(activo.id) : anios[0] ? String(anios[0].id) : "");
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setMantenimientoLoading(false);
+    }
+  }, []);
+
+  const loadIndicadores = useCallback(async (anio = indicadorAnio, mes = indicadorMes) => {
+    const data = await authFetchJson(`${API_BASE}/api/indicadores?anio=${anio}&mes=${mes}`);
+    setIndicadoresList(data.indicadores || []);
+    return data.indicadores || [];
+  }, [indicadorAnio, indicadorMes]);
+
+  useEffect(() => {
+    if (activeTab !== "mantenimiento") return;
+    loadMantenimiento();
+  }, [activeTab, loadMantenimiento]);
+
+  useEffect(() => {
+    if (activeTab !== "indicadores") return;
+    loadIndicadores().catch(() => {
+      setError("No se pudieron cargar los indicadores.");
+    });
+  }, [activeTab, indicadorAnio, indicadorMes, loadIndicadores]);
+
+  const handleActivarAnio = async () => {
+    if (!selectedAnioId) return;
+    setMantenimientoLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const data = await authFetchJson(`${API_BASE}/api/admin/anio-escolar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anio_escolar_id: Number(selectedAnioId) }),
+      });
+      setAnioActivo(data.activo);
+      setMessage(`Año escolar ${data.activo.anio} activado correctamente.`);
+      await loadMantenimiento();
+      await loadAdminData();
+    } catch (activateError) {
+      setError(activateError.message);
+    } finally {
+      setMantenimientoLoading(false);
+    }
+  };
+
+  const handleEliminarDemo = async () => {
+    if (!window.confirm("Se eliminarán alumnos de prueba o con DNI inválido. ¿Continuar?")) {
+      return;
+    }
+    setDemoDeleting(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await authFetch(`${API_BASE}/api/admin/estudiantes/demo`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "No se pudieron eliminar los registros de prueba.");
+      }
+      setMessage(
+        data.eliminados > 0
+          ? `Se eliminaron ${data.eliminados} alumno(s) de prueba.`
+          : "No habia alumnos de prueba que eliminar."
+      );
+      await loadMantenimiento();
+      await loadAdminData();
+    } catch (deleteError) {
+      setError(deleteError.message);
+    } finally {
+      setDemoDeleting(false);
+    }
+  };
+
+  const handleCalcularIndicadores = async () => {
+    setIndicadoresLoading(true);
+    setIndicadoresMessage("");
+    setError("");
+    try {
+      await authFetchJson(`${API_BASE}/api/indicadores/calcular`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anio: indicadorAnio, mes: indicadorMes }),
+      });
+      await loadIndicadores(indicadorAnio, indicadorMes);
+      setIndicadoresMessage(
+        `Indicadores calculados para ${MESES_LABELS[indicadorMes] || indicadorMes} ${indicadorAnio}.`
+      );
+    } catch (calcError) {
+      setError(calcError.message);
+    } finally {
+      setIndicadoresLoading(false);
+    }
+  };
 
   const handleUploadButtonClick = () => {
     fileInputRef.current?.click();
@@ -150,10 +274,10 @@ export default function AdminApp({ user, onLogout }) {
       <section className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-col justify-between gap-4 rounded-2xl border border-amber-900/40 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6 shadow-xl shadow-black/30 md:flex-row md:items-start">
           <div>
-            <p className="text-sm text-amber-200/80">Modo administracion</p>
+            <p className="text-sm text-amber-200/80">Modo administración</p>
             <h1 className="mt-1 text-4xl font-semibold text-white">PredictEdu Admin</h1>
             <p className="mt-2 text-sm text-zinc-400">
-              Gestion institucional: personal docente, secciones, usuarios y cargas SIAGIE.
+              Gestión institucional: personal docente, secciones, usuarios y cargas SIAGIE.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-100">
@@ -176,7 +300,7 @@ export default function AdminApp({ user, onLogout }) {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-200 hover:bg-zinc-700"
           >
             <IconLogout />
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </header>
 
@@ -226,11 +350,23 @@ export default function AdminApp({ user, onLogout }) {
             active={activeTab === "siagie"}
             onClick={() => setActiveTab("siagie")}
           />
+          <AdminTab
+            label="Indicadores"
+            icon={IconChart}
+            active={activeTab === "indicadores"}
+            onClick={() => setActiveTab("indicadores")}
+          />
+          <AdminTab
+            label="Mantenimiento"
+            icon={IconWrench}
+            active={activeTab === "mantenimiento"}
+            onClick={() => setActiveTab("mantenimiento")}
+          />
         </nav>
 
         {loading ? (
           <p className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-400">
-            Cargando panel de administracion...
+            Cargando panel de administración...
           </p>
         ) : (
           <>
@@ -244,15 +380,15 @@ export default function AdminApp({ user, onLogout }) {
                     tone="blue"
                   />
                   <StatCard
-                    title="Analisis"
+                    title="Análisis"
                     value={resumen?.total_predicciones ?? 0}
-                    subtitle="registrados en el ano"
+                    subtitle="registrados en el año"
                     tone="zinc"
                   />
                   <StatCard
                     title="Riesgo alto"
                     value={resumen?.summary?.alto ?? 0}
-                    subtitle="ultimo analisis por alumno"
+                    subtitle="último análisis por alumno"
                     tone="red"
                   />
                   <StatCard
@@ -263,7 +399,7 @@ export default function AdminApp({ user, onLogout }) {
                   />
                 </section>
                 <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
-                  <h2 className="text-lg font-semibold text-white">Ultimas cargas SIAGIE</h2>
+                  <h2 className="text-lg font-semibold text-white">Últimas cargas SIAGIE</h2>
                   {cargas.length === 0 ? (
                     <p className="mt-3 text-sm text-zinc-400">Sin cargas registradas.</p>
                   ) : (
@@ -290,7 +426,7 @@ export default function AdminApp({ user, onLogout }) {
               <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
                 <h2 className="text-lg font-semibold text-white">Personal docente</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Docentes y tutores registrados en la institucion educativa.
+                  Docentes y tutores registrados en la institución educativa.
                 </p>
                 <div className="mt-4 overflow-x-auto">
                   <table className="min-w-full text-left text-sm">
@@ -300,7 +436,7 @@ export default function AdminApp({ user, onLogout }) {
                         <th className="px-3 py-2">DNI</th>
                         <th className="px-3 py-2">Especialidad</th>
                         <th className="px-3 py-2">Cargo</th>
-                        <th className="px-3 py-2">Telefono</th>
+                        <th className="px-3 py-2">Teléfono</th>
                         <th className="px-3 py-2">Estado</th>
                       </tr>
                     </thead>
@@ -337,16 +473,16 @@ export default function AdminApp({ user, onLogout }) {
 
             {activeTab === "secciones" && (
               <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
-                <h2 className="text-lg font-semibold text-white">Secciones del ano escolar</h2>
+                <h2 className="text-lg font-semibold text-white">Secciones del año escolar</h2>
                 <p className="mt-1 text-sm text-zinc-400">
-                  Aulas, tutores asignados y alumnos matriculados por seccion.
+                  Aulas, tutores asignados y alumnos matriculados por sección.
                 </p>
                 <div className="mt-4 overflow-x-auto">
                   <table className="min-w-full text-left text-sm">
                     <thead className="border-b border-zinc-800 text-zinc-400">
                       <tr>
-                        <th className="px-3 py-2">Seccion</th>
-                        <th className="px-3 py-2">Ano escolar</th>
+                        <th className="px-3 py-2">Sección</th>
+                        <th className="px-3 py-2">Año escolar</th>
                         <th className="px-3 py-2">Turno</th>
                         <th className="px-3 py-2">Tutor</th>
                         <th className="px-3 py-2">Alumnos</th>
@@ -387,7 +523,7 @@ export default function AdminApp({ user, onLogout }) {
                         <th className="px-3 py-2">Usuario</th>
                         <th className="px-3 py-2">Rol</th>
                         <th className="px-3 py-2">Docente</th>
-                        <th className="px-3 py-2">Ultimo acceso</th>
+                        <th className="px-3 py-2">Último acceso</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -417,7 +553,7 @@ export default function AdminApp({ user, onLogout }) {
                   <div>
                     <h2 className="text-lg font-semibold text-white">Cargas SIAGIE</h2>
                     <p className="mt-1 text-sm text-zinc-400">
-                      Historial de importaciones masivas y nueva carga desde aqui.
+                      Historial de importaciones masivas y nueva carga desde aquí.
                     </p>
                   </div>
                   <button
@@ -439,7 +575,7 @@ export default function AdminApp({ user, onLogout }) {
                 </div>
                 <div className="mt-4 space-y-2">
                   {cargas.length === 0 ? (
-                    <p className="text-sm text-zinc-400">Aun no hay cargas registradas.</p>
+                    <p className="text-sm text-zinc-400">Aún no hay cargas registradas.</p>
                   ) : (
                     cargas.map((carga) => (
                       <div
@@ -459,6 +595,123 @@ export default function AdminApp({ user, onLogout }) {
                   )}
                 </div>
               </section>
+            )}
+
+            {activeTab === "indicadores" && (
+              <IndicadoresPanel
+                anio={indicadorAnio}
+                mes={indicadorMes}
+                onAnioChange={setIndicadorAnio}
+                onMesChange={setIndicadorMes}
+                indicadores={indicadoresList}
+                loading={indicadoresLoading}
+                message={indicadoresMessage}
+                onCalcular={handleCalcularIndicadores}
+                esAdmin
+              />
+            )}
+
+            {activeTab === "mantenimiento" && (
+              <div className="space-y-6">
+                <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">Año escolar activo</h2>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Define qué año escolar usan matrículas, secciones e indicadores.
+                      </p>
+                      {anioActivo && (
+                        <p className="mt-2 text-sm text-amber-200">
+                          Activo: <strong>{anioActivo.anio}</strong>
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <label className="block">
+                        <span className="mb-1 block text-xs text-zinc-400">Cambiar a</span>
+                        <select
+                          value={selectedAnioId}
+                          onChange={(event) => setSelectedAnioId(event.target.value)}
+                          disabled={mantenimientoLoading || !aniosEscolares.length}
+                          className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+                        >
+                          {aniosEscolares.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.anio}
+                              {item.activo ? " (activo)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleActivarAnio}
+                        disabled={
+                          mantenimientoLoading ||
+                          !selectedAnioId ||
+                          String(anioActivo?.id) === selectedAnioId
+                        }
+                        className="rounded-xl border border-amber-600/40 bg-amber-600/10 px-4 py-2 text-sm text-amber-100 disabled:opacity-50"
+                      >
+                        Activar año
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">Limpieza de datos</h2>
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Elimina alumnos de prueba o con DNI inválido sin afectar matrículas reales.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleEliminarDemo}
+                      disabled={demoDeleting}
+                      className="rounded-xl border border-red-600/40 bg-red-600/10 px-4 py-2 text-sm text-red-100 hover:bg-red-600/20 disabled:opacity-50"
+                    >
+                      {demoDeleting ? "Eliminando..." : "Eliminar alumnos de prueba"}
+                    </button>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5">
+                  <div className="flex items-center gap-2">
+                    <IconDatabase />
+                    <h2 className="text-lg font-semibold text-white">Resumen de base de datos</h2>
+                  </div>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Conteo de filas por tabla del esquema institucional.
+                  </p>
+                  {mantenimientoLoading ? (
+                    <p className="mt-4 text-sm text-zinc-500">Cargando resumen...</p>
+                  ) : (
+                    <div className="mt-4 max-h-96 overflow-y-auto">
+                      <table className="min-w-full text-left text-sm">
+                        <thead className="sticky top-0 border-b border-zinc-800 bg-zinc-900 text-zinc-400">
+                          <tr>
+                            <th className="px-3 py-2">Tabla</th>
+                            <th className="px-3 py-2 text-right">Filas</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tablasResumen.map((item) => (
+                            <tr key={item.tabla} className="border-b border-zinc-800/80">
+                              <td className="px-3 py-2 font-mono text-xs text-zinc-300">
+                                {item.tabla}
+                              </td>
+                              <td className="px-3 py-2 text-right text-zinc-100">{item.filas}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              </div>
             )}
           </>
         )}

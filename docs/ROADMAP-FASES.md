@@ -7,7 +7,7 @@ Plan paso a paso para **usar las 23 tablas actuales** y ampliar el sistema sin r
 
 ---
 
-## Estado actual (Fases 1–5 ✅)
+## Estado actual (Fases 1–12 ✅)
 
 | Fase | Entregable |
 |------|------------|
@@ -15,7 +15,14 @@ Plan paso a paso para **usar las 23 tablas actuales** y ampliar el sistema sin r
 | **2** | Persistencia — predict/SIAGIE → SQLite |
 | **3** | API + UI — Resumen, Estudiantes, Intervenciones, DNI |
 | **4** | Filtros por riesgo + exportar reporte |
-| **5** | QA — pytest (24 tests), registro de ejecución, CI GitHub Actions |
+| **5** | QA — pytest, registro de ejecución, CI GitHub Actions |
+| **6** | Login, roles admin/docente, apps separadas |
+| **7** | Matrícula por sección, filtro tutor, evaluaciones con `matricula_id` |
+| **8** | Apoderados, contacto familiar en alertas y ficha |
+| **9** | Seguimiento de alertas, estados y bitácora docente |
+| **10** | Talleres de reforzamiento, inscripciones, sesiones y materiales |
+| **11** | Derivaciones externas e incidencias de convivencia |
+| **12** | Indicadores mensuales, competencias y asistencia diaria |
 
 ### Tablas ya operativas hoy
 
@@ -26,17 +33,29 @@ Plan paso a paso para **usar las 23 tablas actuales** y ampliar el sistema sin r
 | `estudiantes` | Registro, búsqueda DNI, listados |
 | `evaluaciones` | Notas + asistencia % por bimestre |
 | `predicciones_riesgo` | Motor ML + historial |
-| `alertas_riesgo` | Dashboard y lista prioritarias |
-| `intervenciones` | Pestaña Intervenciones (sin docente asignado) |
+| `alertas_riesgo` | Dashboard, estados y ciclo de vida |
+| `seguimiento_alertas` | Bitácora de acciones por alerta |
+| `intervenciones` | Pestaña Intervenciones (con docente y filtro por fechas) |
+| `apoderados` | Contacto familiar en registro, listado y alertas |
+| `estudiante_apoderado` | Vinculo alumno–apoderado principal |
+| `cursos_reforzamiento` | Talleres por área (listado y detalle) |
+| `inscripciones_reforzamiento` | Inscripción con predicción y motivo |
+| `sesiones_reforzamiento` | Historial de sesiones por taller |
+| `materiales_reforzamiento` | PDFs, videos y enlaces en biblioteca del curso |
+| `derivaciones_externas` | Derivaciones a UGEL, DEMUNA, salud, etc. |
+| `incidencias_convivencia` | Registro de convivencia escolar por alumno |
+| `indicadores_mensuales` | KPIs mensuales por seccion (tablero Indicadores) |
+| `competencias_notas` | Notas opcionales por area al analizar alumno |
+| `asistencias_diarias` | Registro diario y recalculo de % asistencia |
 | `cargas_siagie` | Auditoría al subir Excel (sin pantalla de historial) |
 
 ### Tablas con solo datos de ejemplo (seed)
 
-`docentes` (2) · `secciones` (4) · `cursos_reforzamiento` (2)
+`docentes` (2) · `secciones` (4)
 
 ### Tablas sin uso en código ni datos
 
-`matriculas` · `apoderados` · `estudiante_apoderado` · `usuarios_sistema` · `competencias_notas` · `asistencias_diarias` · `inscripciones_reforzamiento` · `seguimiento_alertas` · `sesiones_reforzamiento` · `derivaciones_externas` · `incidencias_convivencia` · `indicadores_mensuales`
+`usuarios_sistema` *(login usa seed; gestion admin en Fase 13)* 
 
 ---
 
@@ -48,7 +67,7 @@ Plan paso a paso para **usar las 23 tablas actuales** y ampliar el sistema sin r
 | **7** | `secciones`, `matriculas` | Matrícula por aula; FK en `evaluaciones` |
 | **8** | `apoderados`, `estudiante_apoderado` | Datos de familia; contacto desde alertas |
 | **9** | `seguimiento_alertas`, `alertas_riesgo` (estados) | Bitácora por alerta; cerrar/atender |
-| **10** | `cursos_reforzamiento`, `inscripciones_reforzamiento`, `sesiones_reforzamiento` | Talleres de reforzamiento |
+| **10** | `cursos_reforzamiento`, `inscripciones_reforzamiento`, `sesiones_reforzamiento`, `materiales_reforzamiento` | Talleres de reforzamiento |
 | **11** | `derivaciones_externas`, `incidencias_convivencia` | UGEL/salud; convivencia escolar |
 | **12** | `indicadores_mensuales`, `competencias_notas`, `asistencias_diarias` | Tablero mensual; datos ampliados |
 | **13** | `cargas_siagie`, `configuracion_anio_escolar` | Panel admin + mantenimiento |
@@ -228,8 +247,10 @@ El admin **también puede** usar el modo docente (analizar, SIAGIE) si hace falt
 - Filtro por sección en listado y export
 
 ### Criterios de aceptación
-- [ ] Matrícula única por alumno y año escolar
-- [ ] Evaluaciones guardan `matricula_id` cuando existe
+- [x] Matrícula única por alumno y año escolar
+- [x] Evaluaciones guardan `matricula_id` cuando existe
+- [x] Docente ve solo alumnos de sus secciones (por defecto)
+- [x] Selector de sección al registrar y filtro en listado/export
 
 ---
 
@@ -248,8 +269,8 @@ El admin **también puede** usar el modo docente (analizar, SIAGIE) si hace falt
 - En alertas de riesgo alto: mostrar teléfono y botón “Copiar contacto”
 
 ### Criterios de aceptación
-- [ ] Un apoderado principal por estudiante
-- [ ] Teléfono visible en alertas prioritarias
+- [x] Un apoderado principal por estudiante
+- [x] Teléfono visible en alertas prioritarias
 
 ---
 
@@ -270,31 +291,35 @@ El admin **también puede** usar el modo docente (analizar, SIAGIE) si hace falt
 - “Registrar acción” crea fila en `seguimiento_alertas` (además de intervención si aplica)
 
 ### Criterios de aceptación
-- [ ] Toda acción desde alerta queda en `seguimiento_alertas`
-- [ ] Alertas cerradas dejan de salir en prioritarias
+- [x] Toda acción desde alerta queda en `seguimiento_alertas`
+- [x] Alertas cerradas dejan de salir en prioritarias
 
 ---
 
-## Fase 10 — Reforzamiento escolar
+## Fase 10 — Reforzamiento escolar + materiales del docente
 
-**Objetivo:** Inscribir alumnos en riesgo en talleres (matemática, comunicación).
+**Objetivo:** Inscribir alumnos en riesgo en talleres y que el docente publique material de estudio (PDFs, enlaces a videos).
 
-**Tablas:** `cursos_reforzamiento`, `inscripciones_reforzamiento`, `sesiones_reforzamiento`
+**Tablas:** `cursos_reforzamiento`, `inscripciones_reforzamiento`, `sesiones_reforzamiento`, **`materiales_reforzamiento`** (nueva)
 
 ### Backend
 - `GET /api/cursos-reforzamiento`
 - `POST /api/cursos-reforzamiento/:id/inscripciones`
 - `POST /api/cursos-reforzamiento/:id/sesiones`
+- `POST /api/cursos-reforzamiento/:id/materiales` — subir archivo o registrar enlace
+- `GET /api/cursos-reforzamiento/:id/materiales`
 - `PATCH /api/inscripciones/:id` — resultado (`mejoro`, `en_proceso`, etc.)
 
 ### Frontend
 - Pestaña **Reforzamiento**: cursos, cupos, alumnos inscritos
+- **Biblioteca del curso**: subir PDF/ficha, agregar enlace (YouTube, Drive, etc.)
 - Desde alerta: “Inscribir en taller” (pre-selecciona curso por área débil)
 - Registro de sesiones por fecha y tema
 
 ### Criterios de aceptación
-- [ ] Inscripción ligada a `prediccion_id` y motivo `riesgo_alto` / `bajo_rendimiento`
-- [ ] Sesiones visibles en historial del curso
+- [x] Inscripción ligada a `prediccion_id` y motivo `riesgo_alto` / `bajo_rendimiento`
+- [x] Sesiones visibles en historial del curso
+- [x] Docente puede cargar al menos un archivo y un enlace por curso
 
 ---
 
@@ -316,8 +341,8 @@ El admin **también puede** usar el modo docente (analizar, SIAGIE) si hace falt
 - Lista en ficha del estudiante
 
 ### Criterios de aceptación
-- [ ] Derivación opcionalmente enlazada a `intervencion_id`
-- [ ] Incidencias filtrables por severidad
+- [x] Derivación opcionalmente enlazada a `intervencion_id`
+- [x] Incidencias filtrables por severidad
 
 ---
 
@@ -339,8 +364,8 @@ El admin **también puede** usar el modo docente (analizar, SIAGIE) si hace falt
 - Vista calendario asistencia (futuro cercano)
 
 ### Criterios de aceptación
-- [ ] `indicadores_mensuales` con al menos un mes calculado
-- [ ] Export reporte incluye indicadores por sección
+- [x] `indicadores_mensuales` con al menos un mes calculado
+- [x] Export reporte incluye indicadores por sección
 
 ---
 
@@ -361,9 +386,9 @@ El admin **también puede** usar el modo docente (analizar, SIAGIE) si hace falt
 - Historial SIAGIE, limpieza de demos, cambio de año escolar
 
 ### Criterios de aceptación
-- [ ] Admin ve historial de cargas SIAGIE
-- [ ] Puede eliminar alumnos de prueba sin romper FK
-- [ ] Año escolar configurable desde UI
+- [x] Admin ve historial de cargas SIAGIE
+- [x] Puede eliminar alumnos de prueba sin romper FK
+- [x] Año escolar configurable desde UI
 
 ---
 
@@ -417,16 +442,7 @@ flowchart TD
 
 ## Con qué empezamos
 
-### ▶ Siguiente paso: **Fase 6 — Login + Admin vs Docente**
-
-Implementar en este orden:
-
-1. **6.1** Login API + seed `admin` y `mquispe`
-2. **6.2** Pantalla login y ocultar Admin según rol
-3. **6.3** Pestaña Administración (historial SIAGIE, limpiar demos, resumen BD)
-4. **6.4** Trazabilidad en intervenciones y cargas
-
-Cuando confirmes, arrancamos por **6.1** en el código.
+### ▶ Siguiente paso: **Fase 11 — Derivaciones e incidencias**
 
 ---
 

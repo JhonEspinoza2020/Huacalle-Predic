@@ -1,8 +1,9 @@
 # Plan de pruebas — PredictEdu (I.E.I. N° 32857 Huacalle)
 
-**Versión:** 1.0  
+**Versión:** 1.1  
 **Proyecto:** PredictHuacalle — aplicación PredictEdu con predicción de riesgo académico.  
-**Alcance:** Backend Flask (`backend-sidecar`), cliente Tauri + React (`src/`, `src-tauri/`).
+**Alcance:** Backend Flask (`backend-sidecar`), cliente Tauri + React (`src/`, `src-tauri/`).  
+**Norma de referencia:** ISO/IEC/IEEE **29119** (véase [documentacion/iso/pruebas-ISO29119.md](../documentacion/iso/pruebas-ISO29119.md)).
 
 ---
 
@@ -25,8 +26,8 @@ Definir la estrategia y el alcance de las pruebas para **validar el comportamien
 ### 2.2 Fuera de alcance (versión actual)
 
 - Pruebas de carga y estrés (miles de peticiones concurrentes).
-- Pruebas de seguridad profunda (pentesting); solo comprobaciones básicas de validación de entrada en API.
-- Automatización continua en CI (puede añadirse en una fase posterior).
+- Pruebas de seguridad profunda (pentesting); solo comprobaciones básicas de validación de entrada y cabeceras HTTP (ISO 27001).
+- Automatización continua en CI — **implementada** en `.github/workflows/ci.yml` (ISO 9001 / 29119).
 - Pestañas “Estudiantes” e “Intervenciones” (en la UI actual son elementos visuales sin navegación implementada).
 
 ---
@@ -54,7 +55,7 @@ Reglas de negocio relevantes para pruebas:
 |------|-------------|----------------------|
 | **Pruebas unitarias (API)** | Verificar respuestas HTTP y cuerpo JSON de cada endpoint con herramientas como curl, Postman o script. | Desarrollador / tester |
 | **Pruebas de integración** | Cliente Tauri llamando al Flask real en la misma máquina; flujos completos de formulario y subida de archivo. | Tester |
-| **Pruebas de sistema** | Escenario end-to-end: iniciar backend, iniciar `npm run tauri dev`, ejecutar todos los casos de **prioridad Alta** en `casos-de-prueba.md`. | Tester / docente |
+| **Pruebas de sistema** | Escenario end-to-end: iniciar backend, iniciar `npm run tauri dev`, ejecutar todos los casos de **prioridad Alta** en `caja-negra/casos-de-prueba.md`. | Tester / docente |
 | **Pruebas de regresión** | Repetir casos marcados como “críticos” tras cada cambio en `app.py` o `App.jsx`. | Desarrollador |
 | **Pruebas de usabilidad (ligera)** | Claridad de mensajes, estados de carga (“Analizando…”, “Procesando SIAGIE…”). | Usuario piloto / docente |
 
@@ -82,7 +83,7 @@ Reglas de negocio relevantes para pruebas:
 
 ## 7. Criterios de salida
 
-- Todos los casos **críticos** (ver `casos-de-prueba.md`, columna Prioridad **Alta**) ejecutados y **Pasado** o con incidencia registrada y plan de corrección.
+- Todos los casos **críticos** (ver `caja-negra/casos-de-prueba.md`, columna Prioridad **Alta**) ejecutados y **Pasado** o con incidencia registrada y plan de corrección.
 - Sin bloqueos que impidan predicción unitaria ni carga SIAGIE en escenario feliz.
 - Registro de ejecución completado en `registro-de-ejecucion.md` (o anexo).
 
@@ -112,7 +113,7 @@ Reglas de negocio relevantes para pruebas:
 
 ## 10. Documentos relacionados
 
-- `casos-de-prueba.md` — especificación ejecutable de cada caso.
+- `caja-negra/casos-de-prueba.md` — especificación ejecutable de cada caso.
 - `matriz-trazabilidad.md` — trazabilidad requisito ↔ caso.
 - `registro-de-ejecucion.md` — bitácora de corridas.
-- `ejemplos-curl.md` — verificación rápida del backend.
+- `caja-negra/ejemplos-curl.md` — verificación rápida del backend.

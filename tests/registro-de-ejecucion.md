@@ -21,7 +21,7 @@
 
 ## Resultados por caso
 
-Copie los IDs desde `casos-de-prueba.md`. Marque: **P** = Pasado, **F** = Fallido, **B** = Bloqueado, **N** = No ejecutado.
+Copie los IDs desde `caja-negra/casos-de-prueba.md`. Marque: **P** = Pasado, **F** = Fallido, **B** = Bloqueado, **N** = No ejecutado.
 
 | ID caso | Resultado (P/F/B/N) | Evidencia (captura, log, nota) | Incidencia # |
 |---------|---------------------|--------------------------------|--------------|

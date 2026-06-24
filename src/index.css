@@ -5,3 +5,22 @@ body,
 #root {
   min-height: 100%;
 }
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 9999px;
+  background: #3b82f6;
+  border: 2px solid #1e3a5f;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 1rem;
+  width: 1rem;
+  border-radius: 9999px;
+  background: #3b82f6;
+  border: 2px solid #1e3a5f;
+  cursor: pointer;
+}

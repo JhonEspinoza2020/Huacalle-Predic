@@ -1,59 +1,6 @@
-import importlib
-import os
-import sys
-from pathlib import Path
-
-import pytest
-
-BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend-sidecar"
-sys.path.insert(0, str(BACKEND_DIR))
-
-from database import db_setup
 from database import repository as repo
 
-
-@pytest.fixture
-def isolated_db(tmp_path, monkeypatch):
-    db_file = tmp_path / "colegio.db"
-
-    def _db_path():
-        return str(db_file)
-
-    monkeypatch.setattr(db_setup, "get_db_path", _db_path)
-    monkeypatch.setattr(repo, "get_db_path", _db_path)
-    repo.init_database(seed=True)
-    return db_file
-
-
-def load_app_with_db(monkeypatch, isolated_db, auth_enabled: bool = True):
-    monkeypatch.setenv("PREDICTEDU_AUTH", "1" if auth_enabled else "0")
-    monkeypatch.setattr(repo, "get_db_path", lambda: str(isolated_db))
-    monkeypatch.setattr(db_setup, "get_db_path", lambda: str(isolated_db))
-
-    module_name = "edge_pride_backend_app"
-    if module_name in sys.modules:
-        importlib.reload(sys.modules[module_name])
-    else:
-        from test_logic import load_app_module
-
-        return load_app_module()
-
-    return sys.modules[module_name]
-
-
-def login_as(client, username: str, password: str) -> str:
-    response = client.post(
-        "/api/auth/login",
-        json={"username": username, "password": password},
-    )
-    assert response.status_code == 200
-    body = response.get_json()
-    token = body["token"]
-    return token
-
-
-def auth_headers(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}"}
+from api_helpers import auth_headers, load_app_with_db, login_as
 
 
 def test_login_admin_ok(isolated_db, monkeypatch):

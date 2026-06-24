@@ -70,7 +70,7 @@ def require_auth(view: Callable):
             return view(*args, **kwargs)
         user = get_current_user()
         if user is None:
-            return jsonify({"error": "No autorizado. Inicia sesion."}), 401
+            return jsonify({"error": "No autorizado. Inicia sesión."}), 401
         return view(*args, **kwargs)
 
     return wrapper
@@ -82,9 +82,9 @@ def require_roles(*roles: str):
         def wrapper(*args, **kwargs):
             user = get_current_user()
             if user is None:
-                return jsonify({"error": "No autorizado. Inicia sesion."}), 401
+                return jsonify({"error": "No autorizado. Inicia sesión."}), 401
             if user["rol"] not in roles and user["rol"] != "admin":
-                return jsonify({"error": "No tienes permiso para esta accion."}), 403
+                return jsonify({"error": "No tienes permiso para esta acción."}), 403
             return view(*args, **kwargs)
 
         return wrapper

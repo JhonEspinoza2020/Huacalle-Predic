@@ -6,26 +6,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend-sidecar"
-sys.path.insert(0, str(BACKEND_DIR))
-
 from database import db_setup
 from database import repository as repo
 
-DEMO_XLSX = Path(__file__).resolve().parents[1] / "docs" / "siagie_demo_5toA.xlsx"
+from paths import DOCS_DIR
+
+DEMO_XLSX = DOCS_DIR / "siagie_demo_5toA.xlsx"
 
 
-@pytest.fixture
-def isolated_db(tmp_path, monkeypatch):
-    db_file = tmp_path / "colegio.db"
-
-    def _db_path():
-        return str(db_file)
-
-    monkeypatch.setattr(db_setup, "get_db_path", _db_path)
-    monkeypatch.setattr(repo, "get_db_path", _db_path)
-    repo.init_database(seed=True)
-    return db_file
 
 
 def load_app_with_db(monkeypatch, isolated_db):
@@ -36,7 +24,7 @@ def load_app_with_db(monkeypatch, isolated_db):
     if module_name in sys.modules:
         importlib.reload(sys.modules[module_name])
     else:
-        from test_logic import load_app_module
+        from app_loader import load_app_module
 
         return load_app_module()
 

@@ -1,6 +1,6 @@
 # Matriz de trazabilidad — Requisitos funcionales ↔ Casos de prueba
 
-Los **RF** (requisitos funcionales) describen comportamiento esperado del sistema PredictEdu. Los **CP** enlazan a `casos-de-prueba.md`.
+Los **RF** (requisitos funcionales) describen comportamiento esperado del sistema PredictEdu. Los **CP** enlazan a `caja-negra/casos-de-prueba.md`.
 
 | ID RF | Descripción breve | Casos de prueba |
 |-------|-------------------|-----------------|

@@ -3,24 +3,10 @@ from pathlib import Path
 
 import pytest
 
-BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend-sidecar"
-sys.path.insert(0, str(BACKEND_DIR))
-
 from database import db_setup
 from database import repository as repo
 
 
-@pytest.fixture
-def isolated_db(tmp_path, monkeypatch):
-    db_file = tmp_path / "colegio.db"
-
-    def _db_path():
-        return str(db_file)
-
-    monkeypatch.setattr(db_setup, "get_db_path", _db_path)
-    monkeypatch.setattr(repo, "get_db_path", _db_path)
-    repo.init_database(seed=True)
-    return db_file
 
 
 def test_init_database_creates_schema(isolated_db):
@@ -29,7 +15,7 @@ def test_init_database_creates_schema(isolated_db):
     assert isolated_db.exists()
     assert status["ready"] is True
     assert status["schema_version"] == db_setup.SCHEMA_VERSION
-    assert status["table_count"] == 23
+    assert status["table_count"] == 24
 
 
 def test_guardar_prediccion_y_consultas(isolated_db):

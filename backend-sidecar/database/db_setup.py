@@ -2,7 +2,7 @@ import os
 import sqlite3
 from datetime import date
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 DB_FILENAME = "colegio.db"
 
 
@@ -488,6 +488,20 @@ def _create_tables(cursor: sqlite3.Cursor) -> None:
             FOREIGN KEY (curso_id) REFERENCES cursos_reforzamiento(id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS materiales_reforzamiento (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            curso_id INTEGER NOT NULL,
+            docente_id INTEGER,
+            tipo TEXT NOT NULL CHECK (tipo IN ('archivo', 'enlace')),
+            titulo TEXT NOT NULL,
+            url TEXT,
+            ruta_archivo TEXT,
+            nombre_archivo TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (curso_id) REFERENCES cursos_reforzamiento(id) ON DELETE CASCADE,
+            FOREIGN KEY (docente_id) REFERENCES docentes(id) ON DELETE SET NULL
+        );
+
         CREATE TABLE IF NOT EXISTS derivaciones_externas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             estudiante_id INTEGER NOT NULL,
@@ -575,6 +589,9 @@ def _create_tables(cursor: sqlite3.Cursor) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_sesiones_curso_fecha
             ON sesiones_reforzamiento (curso_id, fecha_sesion DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_materiales_reforzamiento_curso
+            ON materiales_reforzamiento (curso_id, created_at DESC);
 
         CREATE INDEX IF NOT EXISTS idx_derivaciones_estudiante_estado
             ON derivaciones_externas (estudiante_id, estado);

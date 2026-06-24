@@ -40,7 +40,7 @@ export async function authFetch(url, options = {}) {
   const response = await fetch(url, { ...options, headers });
   if (response.status === 401) {
     clearSession();
-    throw new Error("Sesion expirada. Vuelve a iniciar sesion.");
+    throw new Error("Sesión expirada. Vuelve a iniciar sesión.");
   }
   return response;
 }

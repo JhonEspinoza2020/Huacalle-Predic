@@ -12,8 +12,9 @@ Sistema de predicción de **riesgo de deserción escolar** para la I.E.I. N° 32
 |-----------|-------------|
 | **[MAPEO.md](./MAPEO.md)** | **Mapeo completo de todos los procesos** del software (arquitectura, APIs, ML, SIAGIE, BD, diagramas) |
 | **[docs/ROADMAP-FASES.md](./docs/ROADMAP-FASES.md)** | **Plan por fases 6–14** — uso de las 23 tablas y extensiones |
+| **[documentacion/iso/](./documentacion/iso/)** | **Cumplimiento ISO 9001, 25010, 29119 y 27001** — SGC, calidad software, pruebas y seguridad |
 | [documentacion/](./documentacion/) | Marco del proyecto y estado del arte |
-| [tests/ejemplos-curl.md](./tests/ejemplos-curl.md) | Pruebas del API con curl/PowerShell |
+| [tests/caja-negra/ejemplos-curl.md](./tests/caja-negra/ejemplos-curl.md) | Pruebas del API con curl/PowerShell |
 
 ---
 

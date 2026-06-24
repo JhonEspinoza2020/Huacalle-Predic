@@ -2,6 +2,7 @@ import { useState } from "react";
 import { API_BASE, saveSession } from "./apiClient";
 import { IconEye, IconEyeOff } from "./icons";
 import RecoverPassword from "./RecoverPassword";
+import { validatePassword, validateUsername } from "./validators";
 
 export default function LoginScreen({ onLoggedIn }) {
   const [view, setView] = useState("login");
@@ -13,6 +14,14 @@ export default function LoginScreen({ onLoggedIn }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    const userError = validateUsername(username);
+    const passError = validatePassword(password);
+    if (userError || passError) {
+      setError(userError || passError);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -23,12 +32,12 @@ export default function LoginScreen({ onLoggedIn }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data.error || "No se pudo iniciar sesion.");
+        throw new Error(data.error || "No se pudo iniciar sesión.");
       }
       saveSession(data.token, data.user);
       onLoggedIn(data.user);
     } catch (loginError) {
-      setError(loginError.message || "Error de autenticacion.");
+      setError(loginError.message || "Error de autenticación.");
     } finally {
       setLoading(false);
     }
@@ -43,7 +52,7 @@ export default function LoginScreen({ onLoggedIn }) {
           <p className="text-sm text-zinc-400">I.E.I. N° 32857 — Huacalle</p>
           <h1 className="mt-1 text-3xl font-semibold text-white">PredictEdu</h1>
           <p className="mt-2 text-sm text-zinc-400">
-            Acceso para docentes y administracion del colegio.
+            Acceso para docentes y administración del colegio.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -60,7 +69,7 @@ export default function LoginScreen({ onLoggedIn }) {
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs text-zinc-400">Contrasena</span>
+              <span className="mb-1 block text-xs text-zinc-400">Contraseña</span>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -74,7 +83,7 @@ export default function LoginScreen({ onLoggedIn }) {
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-200"
-                  aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? <IconEyeOff /> : <IconEye />}
                 </button>
@@ -99,12 +108,12 @@ export default function LoginScreen({ onLoggedIn }) {
               disabled={loading}
               className="w-full rounded-xl bg-blue-500 py-2.5 font-medium text-white hover:bg-blue-400 disabled:opacity-60"
             >
-              {loading ? "Ingresando..." : "Iniciar sesion"}
+              {loading ? "Ingresando..." : "Iniciar sesión"}
             </button>
           </form>
 
           <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 text-xs text-zinc-500">
-            <p className="font-medium text-zinc-400">Cuentas de demostracion</p>
+            <p className="font-medium text-zinc-400">Cuentas de demostración</p>
             <p className="mt-1">Admin: admin / admin2026</p>
             <p>Docente: mquispe / tutor2026</p>
           </div>
