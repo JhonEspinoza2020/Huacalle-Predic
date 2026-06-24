@@ -98,3 +98,17 @@ export function validateDniOpcional(dni) {
   }
   return null;
 }
+
+export function looksLikeDniQuery(value) {
+  const clean = String(value || "").trim();
+  return clean.length > 0 && /^\d+$/.test(clean);
+}
+
+export function validateBusquedaEstudiante(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return null;
+  if (looksLikeDniQuery(clean)) {
+    return validateDni(sanitizeDniInput(clean));
+  }
+  return null;
+}

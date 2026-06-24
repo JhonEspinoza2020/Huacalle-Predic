@@ -4,6 +4,7 @@ import {
   authFetch,
   authFetchJson,
 } from "./apiClient";
+import { downloadBlob } from "./downloadFile";
 import { IconLogout, IconUpload } from "./icons";
 import IndicadoresPanel, { MESES_LABELS } from "./IndicadoresPanel";
 import {
@@ -15,6 +16,9 @@ import {
   validateParentesco,
   validateDniOpcional,
   validateSeccionRequerida,
+  validateTelefono,
+  validateBusquedaEstudiante,
+  looksLikeDniQuery,
   sanitizeTelefonoInput,
 } from "./validators";
 import {
@@ -395,13 +399,16 @@ export default function DocenteApp({ user, onLogout }) {
   const [registerData, setRegisterData] = useState(initialRegisterForm);
   const [registerApoderado, setRegisterApoderado] = useState(initialRegisterApoderado);
   const [registerMessage, setRegisterMessage] = useState("");
+  const [registerError, setRegisterError] = useState("");
   const [registerLoading, setRegisterLoading] = useState(false);
   const [secciones, setSecciones] = useState(user?.secciones || []);
   const [todasSecciones, setTodasSecciones] = useState([]);
   const [registerSeccionId, setRegisterSeccionId] = useState("");
   const [studentFilters, setStudentFilters] = useState({ busqueda: "", riesgo: "", seccion_id: "" });
+  const [studentSearchError, setStudentSearchError] = useState("");
   const [studentsTotal, setStudentsTotal] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState("");
   const [interventionMessage, setInterventionMessage] = useState("");
   const [foundApoderado, setFoundApoderado] = useState(null);
   const [contactStudent, setContactStudent] = useState(null);
@@ -632,9 +639,13 @@ export default function DocenteApp({ user, onLogout }) {
   }, [refreshDashboard]);
 
   useEffect(() => {
-    if (activeTab === "estudiantes") {
-      loadStudents(studentFilters);
+    if (activeTab !== "estudiantes") {
+      return;
     }
+    if (validateBusquedaEstudiante(studentFilters.busqueda)) {
+      return;
+    }
+    loadStudents(studentFilters);
   }, [activeTab, studentFilters, loadStudents]);
 
   useEffect(() => {
@@ -752,6 +763,12 @@ export default function DocenteApp({ user, onLogout }) {
 
   const handleStudentFilterChange = (event) => {
     const { name, value } = event.target;
+    if (name === "busqueda") {
+      const clean = looksLikeDniQuery(value) ? sanitizeDniInput(value) : value;
+      setStudentFilters((prev) => ({ ...prev, busqueda: clean }));
+      setStudentSearchError(validateBusquedaEstudiante(clean) || "");
+      return;
+    }
     setStudentFilters((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -767,10 +784,12 @@ export default function DocenteApp({ user, onLogout }) {
   const handleExportReport = async (formato = "xlsx") => {
     setExporting(true);
     setError("");
+    setExportMessage("");
     try {
       const params = new URLSearchParams({ formato });
-      if (studentFilters.busqueda.trim()) {
-        params.set("busqueda", studentFilters.busqueda.trim());
+      const busqueda = studentFilters.busqueda.trim();
+      if (busqueda && !validateBusquedaEstudiante(busqueda)) {
+        params.set("busqueda", busqueda);
       }
       if (studentFilters.riesgo) {
         params.set("riesgo", studentFilters.riesgo);
@@ -786,15 +805,18 @@ export default function DocenteApp({ user, onLogout }) {
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download =
+      const filename =
         formato === "csv"
           ? "reporte_estudiantes_predictedu.csv"
           : "reporte_estudiantes_predictedu.xlsx";
-      link.click();
-      window.URL.revokeObjectURL(url);
+      const result = await downloadBlob(blob, filename);
+      if (result.cancelled) {
+        setExportMessage("Exportación cancelada.");
+      } else if (result.path) {
+        setExportMessage(`Reporte guardado: ${result.path}`);
+      } else {
+        setExportMessage("Reporte descargado correctamente.");
+      }
     } catch (exportError) {
       setError(apiErrorMessage(exportError));
     } finally {
@@ -841,6 +863,8 @@ export default function DocenteApp({ user, onLogout }) {
 
   const handleRegisterInputChange = (event) => {
     const { name, value } = event.target;
+    setRegisterError("");
+    setRegisterMessage("");
     if (name === "dni") {
       setRegisterData((prev) => ({ ...prev, dni: sanitizeDniInput(value) }));
       return;
@@ -891,6 +915,8 @@ export default function DocenteApp({ user, onLogout }) {
 
   const handleRegisterApoderadoChange = (event) => {
     const { name, value } = event.target;
+    setRegisterError("");
+    setRegisterMessage("");
     if (name === "telefono") {
       setRegisterApoderado((prev) => ({ ...prev, telefono: sanitizeTelefonoInput(value) }));
       return;
@@ -1010,7 +1036,7 @@ export default function DocenteApp({ user, onLogout }) {
       apoderadoParentescoError ||
       apoderadoDniError
     ) {
-      setError(
+      setRegisterError(
         dniError ||
           nombreError ||
           seccionError ||
@@ -1023,6 +1049,7 @@ export default function DocenteApp({ user, onLogout }) {
     }
 
     setRegisterLoading(true);
+    setRegisterError("");
     setError("");
     setRegisterMessage("");
 
@@ -1054,12 +1081,19 @@ export default function DocenteApp({ user, onLogout }) {
       );
       setRegisterData(initialRegisterForm);
       setRegisterApoderado(initialRegisterApoderado);
+      const updatedFilters = {
+        ...studentFilters,
+        busqueda: data.estudiante.dni,
+        seccion_id: "",
+      };
+      setStudentFilters(updatedFilters);
+      setStudentSearchError("");
       await refreshDashboard();
       if (activeTab === "estudiantes") {
-        await loadStudents(studentFilters);
+        await loadStudents(updatedFilters);
       }
-    } catch (registerError) {
-      setError(apiErrorMessage(registerError));
+    } catch (registerErr) {
+      setRegisterError(apiErrorMessage(registerErr));
     } finally {
       setRegisterLoading(false);
     }
@@ -1434,12 +1468,15 @@ export default function DocenteApp({ user, onLogout }) {
       );
       if (!response.ok) throw new Error("No se pudo descargar el archivo.");
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = material.nombre_archivo || material.titulo || "material.pdf";
-      link.click();
-      window.URL.revokeObjectURL(url);
+      const result = await downloadBlob(
+        blob,
+        material.nombre_archivo || material.titulo || "material.pdf"
+      );
+      if (result.cancelled) {
+        setReforzamientoMessage("Descarga cancelada.");
+      } else if (result.path) {
+        setReforzamientoMessage(`Archivo guardado: ${result.path}`);
+      }
     } catch (downloadError) {
       setError(apiErrorMessage(downloadError));
     }
@@ -1783,14 +1820,20 @@ export default function DocenteApp({ user, onLogout }) {
                       <button
                         type="button"
                         onClick={handleSearchByDni}
-                        disabled={loading || !formData.dni.trim()}
+                        disabled={loading || Boolean(validateDni(formData.dni))}
                         className="mt-6 shrink-0 self-end rounded-xl border border-blue-600/40 bg-blue-600/10 px-4 py-2.5 text-sm font-medium text-blue-100 hover:bg-blue-600/20 disabled:opacity-40"
                       >
                         Buscar
                       </button>
                     </div>
                     {searchMessage && (
-                      <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                      <p
+                        className={`rounded-lg px-3 py-2 text-xs ${
+                          validateDni(formData.dni) && formData.dni.trim()
+                            ? "border border-red-500/30 bg-red-500/10 text-red-100"
+                            : "border border-amber-500/30 bg-amber-500/10 text-amber-100"
+                        }`}
+                      >
                         {searchMessage}
                       </p>
                     )}
@@ -1949,6 +1992,11 @@ export default function DocenteApp({ user, onLogout }) {
           <div className="space-y-6">
             <section className="rounded-xl border border-emerald-900/30 bg-zinc-900/80 p-4">
               <h2 className="text-base font-semibold text-white">Registrar nuevo alumno</h2>
+              {registerError && (
+                <p className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                  {registerError}
+                </p>
+              )}
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <TextField
                   label="DNI"
@@ -2059,12 +2107,22 @@ export default function DocenteApp({ user, onLogout }) {
                   type="button"
                   onClick={() => handleExportReport("xlsx")}
                   disabled={exporting || studentsTotal === 0}
+                  title={
+                    studentsTotal === 0
+                      ? "No hay alumnos para exportar con los filtros actuales."
+                      : "Guardar reporte en Excel"
+                  }
                   className="rounded-lg border border-blue-600/40 bg-blue-600/10 px-3 py-2 text-sm text-blue-100 hover:bg-blue-600/20 disabled:opacity-50"
                 >
                   {exporting ? "Exportando..." : "Exportar reporte"}
                 </button>
               </div>
             </div>
+            {exportMessage && (
+              <p className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-200">
+                {exportMessage}
+              </p>
+            )}
 
             {fichaStudent && (
               <div className="mt-4 rounded-xl border border-rose-900/40 bg-rose-950/20 p-4">
@@ -2262,9 +2320,19 @@ export default function DocenteApp({ user, onLogout }) {
                   name="busqueda"
                   value={studentFilters.busqueda}
                   onChange={handleStudentFilterChange}
-                  placeholder="Ej: Mendoza o 72345601"
+                  placeholder="Ej: Mendoza o 12345678"
+                  inputMode={looksLikeDniQuery(studentFilters.busqueda) ? "numeric" : "text"}
+                  maxLength={looksLikeDniQuery(studentFilters.busqueda) ? 8 : 120}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-blue-400"
                 />
+                {looksLikeDniQuery(studentFilters.busqueda) && (
+                  <p className="mt-1 text-[10px] text-zinc-500">
+                    {studentFilters.busqueda.length}/8 dígitos
+                  </p>
+                )}
+                {studentSearchError && (
+                  <p className="mt-1 text-xs text-red-300">{studentSearchError}</p>
+                )}
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs text-zinc-400">Filtrar por riesgo</span>
@@ -2299,6 +2367,13 @@ export default function DocenteApp({ user, onLogout }) {
                 </select>
               </label>
             </div>
+
+            {studentFilters.seccion_id && (
+              <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-100">
+                Mostrando solo una sección. Elige &quot;Todas mis secciones&quot; para ver alumnos de
+                5° A y 6° B.
+              </p>
+            )}
 
             {studentsList.length === 0 ? (
               <p className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-400">
