@@ -1,74 +1,26 @@
-# README — Macroprocesos Institucionales
+# Macroprocesos institucionales
 
-Macroprocesos propuestos para una institución educativa nacional (primaria y secundaria), alineados al sistema PredictEdu / Edge-PRIDE.
+> **Documento actualizado:** ver [documentacion/codigo/macroprocesos.md](documentacion/codigo/macroprocesos.md) (versión 2.0, junio 2026).
 
----
+Este archivo se mantiene como referencia rápida. El contenido canónico incluye:
 
-## 1) Macroproceso Estratégico
+- Mapa actualizado con **fases 1–13** implementadas
+- Vinculación con **24 tablas** SQLite y módulos de código
+- Procedimientos, actividades y matriz de doble entrada en `documentacion/codigo/`
 
-Define rumbo, metas y control institucional.
+## Enlaces
 
-- **Planificación institucional:** PEI, PAT, metas de aprendizaje y permanencia escolar.
-- **Gestión de indicadores:** asistencia, rendimiento, riesgo de deserción, cumplimiento curricular.
-- **Gobierno de datos y calidad:** reglas de registro, trazabilidad, auditoría de información.
-- **Mejora continua:** revisión de resultados, lecciones aprendidas y ajustes de política.
+| Documento | Descripción |
+|-----------|-------------|
+| [macroprocesos.md](documentacion/codigo/macroprocesos.md) | Macroprocesos MP-EST, MP-MIS, MP-SOP |
+| [matriz-doble-entrada.md](documentacion/codigo/matriz-doble-entrada.md) | Matriz proceso ↔ código |
+| [procedimientos.md](documentacion/codigo/procedimientos.md) | PROC-* |
+| [actividades-funciones.md](documentacion/codigo/actividades-funciones.md) | ACT-* y FUN-* |
 
----
+## Resumen (sin cambios conceptuales)
 
-## 2) Macroproceso Misional (Núcleo Educativo)
+1. **Macroproceso Estratégico** — planificación, indicadores, gobierno de datos, mejora continua.
+2. **Macroproceso Misional** — matrícula, evaluación, predicción IA, alertas, intervención, reforzamiento, convivencia.
+3. **Macroproceso de Soporte** — talento humano, TIC, documental SIAGIE, recursos.
 
-Entrega valor directo al estudiante.
-
-- **Admisión y matrícula:** registro del estudiante, sección, nivel y año escolar.
-- **Gestión pedagógica:** programación, sesiones, evaluación y seguimiento por bimestre.
-- **Monitoreo de riesgo educativo:** análisis de asistencia, notas y participación.
-- **Predicción y alerta temprana (IA):** generación de niveles de riesgo y priorización.
-- **Intervención y acompañamiento:** tutoría, contacto con familia, apoyo psicopedagógico.
-- **Reforzamiento académico:** diseño, ejecución y evaluación de cursos/talleres de refuerzo.
-- **Convivencia escolar y bienestar:** manejo de incidencias y acciones de protección.
-
----
-
-## 3) Macroproceso de Soporte
-
-Sostiene la operación académica y administrativa.
-
-- **Gestión de talento humano:** docentes, tutores, capacitación, desempeño.
-- **Gestión TIC y plataforma:** infraestructura, mantenimiento, seguridad y soporte.
-- **Gestión documental y reportes:** SIAGIE, actas, reportes para UGEL y dirección.
-- **Gestión de recursos y logística:** materiales, ambientes, conectividad y equipamiento.
-
----
-
-## 4) Mapa de macroprocesos
-
-```mermaid
-flowchart LR
-    E[Estratégico] --> M[Misional]
-    S[Soporte] --> M
-    M --> R[Resultados institucionales]
-    R --> E
-```
-
----
-
-## 5) Vinculación con PredictEdu
-
-- **Estratégico:** usa tableros e indicadores (`indicadores_mensuales`) para decisiones.
-- **Misional:** usa predicciones (`predicciones_riesgo`), alertas e intervenciones para reducir deserción.
-- **Soporte:** mantiene datos, usuarios, secciones, SIAGIE y operación técnica del sistema.
-
----
-
-## 6) KPI sugeridos por macroproceso
-
-- **Estratégico:** % estudiantes en riesgo alto, tasa de permanencia, avance de metas PAT.
-- **Misional:** mejora de notas post-reforzamiento, reducción de inasistencias, alertas cerradas.
-- **Soporte:** disponibilidad del sistema, calidad de datos SIAGIE, tiempo de atención de incidencias.
-
----
-
-## 7) Resumen ejecutivo
-
-La institución se organiza en tres macroprocesos: **estratégico**, **misional** y **soporte**.  
-PredictEdu se inserta principalmente en el macroproceso misional (alerta y acción pedagógica), con soporte transversal para gestión de datos y decisiones estratégicas.
+PredictEdu opera principalmente en el **misional**, con soporte al **estratégico** (indicadores, reportes) y al **soporte** (usuarios, SIAGIE, mantenimiento).

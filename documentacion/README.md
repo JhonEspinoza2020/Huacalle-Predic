@@ -6,6 +6,10 @@ Material de apoyo para informes, tesis o presentaciones, alineado con la impleme
 
 | Archivo | Descripción |
 |---------|-------------|
+| [codigo/README.md](./codigo/README.md) | **Código** — macroprocesos, matriz doble entrada, procedimientos, actividades y funciones |
+| [base-de-datos/README.md](./base-de-datos/README.md) | **Modelo de datos** — ER, tablas, claves primarias y relaciones (SQLite) |
+| [backend/README.md](./backend/README.md) | **Backend** — estructura, controladores, modelos (repositorio) y servicios |
+| [frontend/README.md](./frontend/README.md) | **Frontend** — estructura, componentes, rutas y comunicación con el backend |
 | [iso/README.md](./iso/README.md) | **Cumplimiento ISO 9001, 25000, 29119 y 27000** — índice del paquete normativo |
 | [diseno-figma.md](./diseno-figma.md) | Diseño UI/UX en **Figma** y su traslado a React + Tailwind. |
 | [documentacion-proyecto.md](./documentacion-proyecto.md) | Marco del problema, alineación técnica, fuentes de datos en la literatura y alcance documental recomendado. |
